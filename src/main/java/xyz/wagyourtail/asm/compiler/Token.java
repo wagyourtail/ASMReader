@@ -13,6 +13,7 @@ public class Token {
         TOKEN,
         COMMENT,
         STRING,
+        CHAR,
         EOF
     }
 }

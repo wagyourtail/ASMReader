@@ -9,7 +9,7 @@ import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class TokenReader {
+public class TokenReader implements AutoCloseable {
     private final BufferedReader in;
     private int line = 0;
     private int column = 0;
@@ -27,6 +27,8 @@ public class TokenReader {
     }
 
     public static final Pattern STRING_CHAR = Pattern.compile("(?:(?<=[^\\\\])|^)((?:\\\\{2})*)\"");
+
+    public static final Pattern CHAR_CHAR = Pattern.compile("(?:(?<=[^\\\\])|^)((?:\\\\{2})*)'");
 
     protected Token readNext() throws IOException {
         if (last != null) {
@@ -54,6 +56,16 @@ public class TokenReader {
             current = ret.substring(m.end());
             return new Token(ret.substring(0, m.end() - 1), Token.TokenType.STRING);
         }
+        if (current.startsWith("'")) {
+            // read char
+            String ret = current.substring(1);
+            Matcher m = CHAR_CHAR.matcher(ret);
+            if (!m.find()) {
+                throwAtPos("expected end of char");
+            }
+            current = ret.substring(m.end());
+            return new Token(ret.substring(0, m.end() - 1), Token.TokenType.CHAR);
+        }
         if (current.startsWith("//")) {
             String ret = current;
             current = null;
@@ -80,6 +92,10 @@ public class TokenReader {
         int hasQuote = ret.indexOf("\"");
         if (hasQuote != -1) {
             ret = ret.substring(0, hasQuote);
+        }
+        int hasChar = ret.indexOf("'");
+        if (hasChar != -1) {
+            ret = ret.substring(0, hasChar);
         }
         int hasComment2 = ret.indexOf("/*");
         if (hasComment2 != -1) {
@@ -254,7 +270,29 @@ public class TokenReader {
     }
 
     public void throwAtPos(String msg, int offset) throws IOException {
-        throw new IOException("Error at line " + line + ", column " + (column + offset) + ": " + msg + "\n" + fullLine + "\n" + " ".repeat(column + offset) + "^");
+        throw new UnexpectedTokenException(msg, line, column + offset, fullLine, peek().value);
+    }
+
+    @Override
+    public void close() throws IOException {
+        in.close();
+    }
+
+    public static class UnexpectedTokenException extends IOException {
+        public final String msg;
+        public final int line;
+        public final int column;
+        public final String fullLine;
+        public final String token;
+
+        public UnexpectedTokenException(String msg, int line, int column, String fullLine, String token) {
+            super("Error at line " + line + ", column " + column + ": " + msg + "\n" + fullLine + "\n" + " ".repeat(column) + "^");
+            this.msg = msg;
+            this.line = line;
+            this.column = column;
+            this.fullLine = fullLine;
+            this.token = token;
+        }
     }
 
 }

@@ -25,10 +25,20 @@ public class Util {
     public static int getAccess(TokenReader lister) throws IOException {
         int access = 0;
         Token tk;
-        while ((tk = lister.popNonCommentIf(t -> t.type == Token.TokenType.TOKEN && accessMap.containsKey(t.value))) != null) {
+        while ((tk = lister.popIf(t -> t.type == Token.TokenType.TOKEN && accessMap.containsKey(t.value.toLowerCase()))) != null) {
             access |= accessMap.get(tk.value);
         }
         return access;
     }
 
+    public static int indexOfFirst(String val, char... c) {
+        int min = -1;
+        for (char ch : c) {
+            int i = val.indexOf(ch);
+            if (i != -1 && (min == -1 || i < min)) {
+                min = i;
+            }
+        }
+        return min;
+    }
 }

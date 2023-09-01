@@ -1,7 +1,0 @@
-// class version 45.0 (45)
-// access flags 0x1
-public class xyz/wagyourtail/Test1 extends xyz/wagyourtail/asm/test/SuperClass implements xyz/wagyourtail/asm/test/Interface1 xyz/wagyourtail/asm/test/Interface2 {
-
-
-  @Lxyz/wagyourtail/TestAnnotation;(value=@Lxyz/wagyourtail/Test2;(), value2={@Lxyz/wagyourtail/Test3;(), @Lxyz/wagyourtail/Test4;(value="test,)\"123")}, value3=3.0D, value4="test", value5=false) // invisible
-}

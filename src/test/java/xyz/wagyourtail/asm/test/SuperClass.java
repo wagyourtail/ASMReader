@@ -1,4 +1,8 @@
 package xyz.wagyourtail.asm.test;
 
-public class SuperClass {
+
+public abstract class SuperClass {
+
+    public abstract void test();
+
 }
