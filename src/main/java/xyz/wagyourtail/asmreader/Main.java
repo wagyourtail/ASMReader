@@ -1,13 +1,13 @@
-package xyz.wagyourtail.asm.compiler;
+package xyz.wagyourtail.asmreader;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
-import xyz.wagyourtail.asm.compiler.file.ASMReader;
+import xyz.wagyourtail.asmreader.file.ClassReader;
+import xyz.wagyourtail.asmreader.token.TokenReader;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -19,7 +19,7 @@ public class Main {
 
     public static void compileJavasm(String asm, ClassVisitor visitor) throws IOException {
         TokenReader reader = new TokenReader(new StringReader(asm));
-        ASMReader asmReader = new ASMReader(reader);
+        ClassReader asmReader = new ClassReader(reader);
         asmReader.accept(visitor);
     }
 
@@ -42,7 +42,7 @@ public class Main {
 
         // read in input.javasm
         try (TokenReader reader = new TokenReader(Files.newBufferedReader(Path.of(args[0])))) {
-            ASMReader asmReader = new ASMReader(reader);
+            ClassReader asmReader = new ClassReader(reader);
             ClassWriter writer = new ClassWriter(0) {
                 @Override
                 protected ClassLoader getClassLoader() {

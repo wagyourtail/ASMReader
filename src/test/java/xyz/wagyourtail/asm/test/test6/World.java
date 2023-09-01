@@ -8,7 +8,7 @@ public class World {
             @Test.Inner final String hi = "hello";
             System.out.println(hi);
         } catch (@Test.Inner Exception ignored) {
-            final String myString = (@Test.Inner String)keepCast();
+            final String myString = (@Test.Inner String) keepCast();
             System.out.println(myString);
         }
     }

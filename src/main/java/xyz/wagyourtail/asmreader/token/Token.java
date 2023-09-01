@@ -1,4 +1,4 @@
-package xyz.wagyourtail.asm.compiler;
+package xyz.wagyourtail.asmreader.token;
 
 public class Token {
     public final String value;
@@ -9,11 +9,4 @@ public class Token {
         this.type = type;
     }
 
-    public enum TokenType {
-        TOKEN,
-        COMMENT,
-        STRING,
-        CHAR,
-        EOF
-    }
 }

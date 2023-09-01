@@ -1,4 +1,4 @@
-package xyz.wagyourtail.asm.compiler;
+package xyz.wagyourtail.asmreader;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;

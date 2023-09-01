@@ -1,4 +1,4 @@
-package xyz.wagyourtail.asm.compiler;
+package xyz.wagyourtail.asmreader.token;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,6 +10,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class TokenReader implements AutoCloseable {
+    public static final Pattern STRING_CHAR = Pattern.compile("(?:(?<=[^\\\\])|^)((?:\\\\{2})*)\"");
+    public static final Pattern CHAR_CHAR = Pattern.compile("(?:(?<=[^\\\\])|^)((?:\\\\{2})*)'");
     private final BufferedReader in;
     private int line = 0;
     private int column = 0;
@@ -26,10 +28,6 @@ public class TokenReader implements AutoCloseable {
         }
     }
 
-    public static final Pattern STRING_CHAR = Pattern.compile("(?:(?<=[^\\\\])|^)((?:\\\\{2})*)\"");
-
-    public static final Pattern CHAR_CHAR = Pattern.compile("(?:(?<=[^\\\\])|^)((?:\\\\{2})*)'");
-
     protected Token readNext() throws IOException {
         if (last != null) {
             column += last.value.length();
@@ -40,7 +38,7 @@ public class TokenReader implements AutoCloseable {
             line++;
             column = 0;
             if (current == null) {
-                return new Token(null, Token.TokenType.EOF);
+                return new Token(null, TokenType.EOF);
             }
         }
         int l = current.length();
@@ -54,7 +52,7 @@ public class TokenReader implements AutoCloseable {
                 throwAtPos("expected end of string");
             }
             current = ret.substring(m.end());
-            return new Token(ret.substring(0, m.end() - 1), Token.TokenType.STRING);
+            return new Token(ret.substring(0, m.end() - 1), TokenType.STRING);
         }
         if (current.startsWith("'")) {
             // read char
@@ -64,12 +62,12 @@ public class TokenReader implements AutoCloseable {
                 throwAtPos("expected end of char");
             }
             current = ret.substring(m.end());
-            return new Token(ret.substring(0, m.end() - 1), Token.TokenType.CHAR);
+            return new Token(ret.substring(0, m.end() - 1), TokenType.CHAR);
         }
         if (current.startsWith("//")) {
             String ret = current;
             current = null;
-            return new Token(ret.substring(2), Token.TokenType.COMMENT);
+            return new Token(ret.substring(2), TokenType.COMMENT);
         }
         if (current.startsWith("/*")) {
             // find */
@@ -79,7 +77,7 @@ public class TokenReader implements AutoCloseable {
             } else {
                 String ret = current.substring(0, end);
                 current = current.substring(end + 2);
-                return new Token(ret.substring(2), Token.TokenType.COMMENT);
+                return new Token(ret.substring(2), TokenType.COMMENT);
             }
         }
         int end = current.indexOf(' ');
@@ -106,7 +104,7 @@ public class TokenReader implements AutoCloseable {
             ret = ret.substring(0, hasComment);
         }
         current = current.substring(ret.length());
-        return new Token(ret, Token.TokenType.TOKEN);
+        return new Token(ret, TokenType.TOKEN);
     }
 
     public Token peek() throws IOException {
@@ -114,7 +112,7 @@ public class TokenReader implements AutoCloseable {
         return next;
     }
 
-    public String peekExpect(Token.TokenType type) throws IOException {
+    public String peekExpect(TokenType type) throws IOException {
         Token tk = peek();
         if (tk.type != type) {
             return null;
@@ -122,12 +120,12 @@ public class TokenReader implements AutoCloseable {
         return tk.value;
     }
 
-    public boolean peekExpect(Token.TokenType type, String value) throws IOException {
+    public boolean peekExpect(TokenType type, String value) throws IOException {
         Token tk = peek();
         return tk.type == type && value.equals(tk.value);
     }
 
-    public String peekExpect(Token.TokenType type, Set<String> value) throws IOException {
+    public String peekExpect(TokenType type, Set<String> value) throws IOException {
         Token tk = peek();
         if (tk.type != type) {
             return null;
@@ -138,7 +136,7 @@ public class TokenReader implements AutoCloseable {
         return tk.value;
     }
 
-    public MatchResult peekExpect(Token.TokenType type, Pattern pattern) throws IOException {
+    public MatchResult peekExpect(TokenType type, Pattern pattern) throws IOException {
         Token tk = peek();
         if (tk.type != type) {
             return null;
@@ -163,7 +161,7 @@ public class TokenReader implements AutoCloseable {
     }
 
     public Token popNonComment() throws IOException {
-        while (peek().type == Token.TokenType.COMMENT) {
+        while (peek().type == TokenType.COMMENT) {
             pop();
         }
         return pop();
@@ -177,13 +175,13 @@ public class TokenReader implements AutoCloseable {
     }
 
     public Token popNonCommentIf(Predicate<Token> predicate) throws IOException {
-        while (peek().type == Token.TokenType.COMMENT) {
+        while (peek().type == TokenType.COMMENT) {
             pop();
         }
         return popIf(predicate);
     }
 
-    public Token popExpect(Token.TokenType type) throws IOException {
+    public Token popExpect(TokenType type) throws IOException {
         Token tk = pop();
         if (tk.type != type) {
             throwAtPos("Expected " + type + " got " + tk.type);
@@ -191,7 +189,7 @@ public class TokenReader implements AutoCloseable {
         return tk;
     }
 
-    public Token popNonCommentExpect(Token.TokenType type) throws IOException {
+    public Token popNonCommentExpect(TokenType type) throws IOException {
         Token tk = popNonComment();
         if (tk.type != type) {
             throwAtPos("Expected " + type + " got " + tk.type);
@@ -199,7 +197,7 @@ public class TokenReader implements AutoCloseable {
         return tk;
     }
 
-    public void popExpect(Token.TokenType type, String value) throws IOException {
+    public void popExpect(TokenType type, String value) throws IOException {
         Token tk = pop();
         if (tk.type != type) {
             throwAtPos("Expected " + type + " got " + tk.type);
@@ -209,7 +207,7 @@ public class TokenReader implements AutoCloseable {
         }
     }
 
-    public void popNonCommentExpect(Token.TokenType type, String value) throws IOException {
+    public void popNonCommentExpect(TokenType type, String value) throws IOException {
         Token tk = popNonComment();
         if (tk.type != type) {
             throwAtPos("Expected " + type + " got " + tk.type);
@@ -219,7 +217,7 @@ public class TokenReader implements AutoCloseable {
         }
     }
 
-    public String popExpect(Token.TokenType type, Set<String> value) throws IOException {
+    public String popExpect(TokenType type, Set<String> value) throws IOException {
         Token tk = pop();
         if (tk.type != type) {
             throwAtPos("Expected " + type + " got " + tk.type);
@@ -230,7 +228,7 @@ public class TokenReader implements AutoCloseable {
         return tk.value;
     }
 
-    public String popNonCommentExpect(Token.TokenType type, Set<String> value) throws IOException {
+    public String popNonCommentExpect(TokenType type, Set<String> value) throws IOException {
         Token tk = popNonComment();
         if (tk.type != type) {
             throwAtPos("Expected " + type + " got " + tk.type);
@@ -241,7 +239,7 @@ public class TokenReader implements AutoCloseable {
         return tk.value;
     }
 
-    public MatchResult popExpect(Token.TokenType type, Pattern pattern) throws IOException {
+    public MatchResult popExpect(TokenType type, Pattern pattern) throws IOException {
         Token tk = pop();
         if (tk.type != type) {
             throwAtPos("Expected " + type + " got " + tk.type);
@@ -253,7 +251,7 @@ public class TokenReader implements AutoCloseable {
         return m;
     }
 
-    public MatchResult popNonCommentExpect(Token.TokenType type, Pattern pattern) throws IOException {
+    public MatchResult popNonCommentExpect(TokenType type, Pattern pattern) throws IOException {
         Token tk = popNonComment();
         if (tk.type != type) {
             throwAtPos("Expected " + type + " got " + tk.type);

@@ -1,15 +1,14 @@
 package xyz.wagyourtail.asm.test;
 
-import org.apache.commons.io.function.IOConsumer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.util.ASMifier;
 import org.objectweb.asm.util.TraceClassVisitor;
-import xyz.wagyourtail.asm.compiler.DeterministicTextifier;
-import xyz.wagyourtail.asm.compiler.TokenReader;
-import xyz.wagyourtail.asm.compiler.file.ASMReader;
+import xyz.wagyourtail.asmreader.DeterministicTextifier;
+import xyz.wagyourtail.asmreader.file.ClassReader;
+import xyz.wagyourtail.asmreader.iofunction.IOConsumer;
+import xyz.wagyourtail.asmreader.token.TokenReader;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -25,7 +24,7 @@ public class TestReader {
 
     public void compileJavasm(String asm, ClassVisitor visitor) throws IOException {
         TokenReader reader = new TokenReader(new StringReader(asm));
-        ASMReader asmReader = new ASMReader(reader);
+        ClassReader asmReader = new ClassReader(reader);
         asmReader.accept(visitor);
     }
 
@@ -46,7 +45,7 @@ public class TestReader {
     }
 
     public void readInClass(String path, ClassVisitor visitor) throws IOException {
-        ClassReader reader = new ClassReader(TestReader.class.getResourceAsStream(path));
+        org.objectweb.asm.ClassReader reader = new org.objectweb.asm.ClassReader(TestReader.class.getResourceAsStream(path));
         reader.accept(visitor, 0);
     }
 
@@ -65,6 +64,7 @@ public class TestReader {
     public void test2() throws IOException {
         String original = classToTextify(e -> readInClass("test2/World.class", e));
         String recompiled = classToTextify(e -> compileJavasm(original, e));
+        assertEquals(original, recompiled);
         // asmifier original and recompiled
         String originalAsm = classToAsmify(e -> readInClass("test2/World.class", e));
         String recompiledAsm = classToAsmify(e -> compileJavasm(original, e));
