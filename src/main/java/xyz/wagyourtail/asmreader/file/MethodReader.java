@@ -330,7 +330,8 @@ public class MethodReader extends AbstractReader implements AnnotationVisitorSup
                                 name = nameTk.value;
                             }
                             Token descTk = reader.popNonCommentExpect(TokenType.TOKEN);
-                            visitor.visitMethodInsn(opcode, ownerStr, name, descTk.value, opcode == INVOKEINTERFACE);
+                            Token itf = reader.popIf(e -> e.type == TokenType.TOKEN && e.value.equals("(itf)"));
+                            visitor.visitMethodInsn(opcode, ownerStr, name, descTk.value, itf != null || opcode == INVOKEINTERFACE);
                         }
                         case INVOKEDYNAMIC -> {
                             Token func = reader.popNonCommentExpect(TokenType.TOKEN);
