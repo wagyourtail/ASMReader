@@ -2,6 +2,7 @@ plugins {
     id("java")
     id("application")
     id("maven-publish")
+    id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
 
@@ -12,7 +13,7 @@ base {
 }
 
 application {
-    mainClass.set("xyz.wagyourtail.asm.compiler.Main")
+    mainClass.set("xyz.wagyourtail.asmreader.Main")
 }
 
 java {
@@ -43,6 +44,31 @@ tasks.test {
     useJUnitPlatform()
 }
 
+tasks.jar {
+    manifest {
+        attributes(
+            "Implementation-Title" to base.archivesName.get(),
+            "Implementation-Version" to project.version,
+            "Main-Class" to application.mainClass.get()
+        )
+    }
+}
+
+tasks.shadowJar {
+    archiveClassifier.set("all")
+    manifest {
+        attributes(
+            "Implementation-Title" to base.archivesName.get(),
+            "Implementation-Version" to project.version,
+            "Main-Class" to application.mainClass.get()
+        )
+    }
+}
+
+tasks.build {
+    dependsOn(tasks.shadowJar)
+}
+
 publishing {
     repositories {
         maven {
@@ -64,7 +90,10 @@ publishing {
             artifactId = base.archivesName.get()
             version = project.version as String
 
-            from(components["java"])
+            artifact(project.tasks.jar) {}
+            artifact(project.tasks.shadowJar) {
+                classifier = "all"
+            }
         }
     }
 }

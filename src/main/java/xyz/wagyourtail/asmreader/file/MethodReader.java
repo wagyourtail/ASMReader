@@ -15,18 +15,18 @@ import static org.objectweb.asm.Opcodes.*;
 
 public class MethodReader extends AbstractReader implements AnnotationVisitorSupplier {
     MethodVisitor visitor;
-    boolean abstrac;
-    boolean intf;
+    boolean abstractFlag;
+    boolean interfaceFlag;
 
     public MethodReader(TokenReader reader) {
         super(reader);
     }
 
-    public void accept(MethodVisitor visitor, boolean abstrac, boolean intf) throws IOException {
+    public void accept(MethodVisitor visitor, boolean abstractFlag, boolean interfaceFlag) throws IOException {
         if (this.visitor != null) throw new IllegalStateException("Already accepted");
         this.visitor = visitor;
-        this.abstrac = abstrac;
-        this.intf = intf;
+        this.abstractFlag = abstractFlag;
+        this.interfaceFlag = interfaceFlag;
         readMethodContent();
     }
 
@@ -62,7 +62,7 @@ public class MethodReader extends AbstractReader implements AnnotationVisitorSup
                 continue;
             }
             if (!visitCode) {
-                if (intf) {
+                if (interfaceFlag) {
                     // expect default=value
                     Token tk = reader.popIf(e -> e.type == TokenType.TOKEN && e.value.startsWith("default="));
                     if (tk != null) {
@@ -78,7 +78,7 @@ public class MethodReader extends AbstractReader implements AnnotationVisitorSup
                         def.visitEnd();
                     }
                 }
-                if (abstrac) break;
+                if (abstractFlag) break;
                 visitor.visitCode();
                 visitCode = true;
             }
