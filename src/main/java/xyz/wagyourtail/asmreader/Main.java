@@ -2,17 +2,19 @@ package xyz.wagyourtail.asmreader;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.util.TraceClassVisitor;
 import xyz.wagyourtail.asmreader.file.ClassReader;
+import xyz.wagyourtail.asmreader.iofunction.IOConsumer;
 import xyz.wagyourtail.asmreader.token.TokenReader;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.Map;
 
 public class Main {
 
@@ -24,35 +26,68 @@ public class Main {
     }
 
     public static void main(String[] args) throws IOException {
-        // args[0] = input.javasm
-        // args[1] = output.class
-        // args[2] = classpath
-        ClassLoader loader;
-        if (args.length == 3) {
-            loader = new URLClassLoader(Arrays.stream(args[2].split(File.pathSeparator)).map(Path::of).map(Path::toUri).map(e -> {
-                try {
-                    return e.toURL();
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
+        ArgHandler argHandler = new ArgHandler();
+        ArgHandler.Arg input = argHandler.arg("Input", "--input", "-i");
+        ArgHandler.Arg output = argHandler.arg("Output", "--output", "-o");
+        ArgHandler.Arg disassemble = argHandler.flag("Disassemble", "--disassemble", "-d");
+        ArgHandler.Arg classpath = argHandler.arg("Classpath", "--classpath", "-cp");
+        Map<ArgHandler.Arg, Integer> parsed = argHandler.parse(args);
+        if (!parsed.containsKey(input)) {
+            argHandler.printUsage();
+            throw new IllegalArgumentException("Missing input");
+        }
+        Path inputPath = Path.of(input.value(args, parsed.get(input)));
+        if (!Files.exists(inputPath)) {
+            throw new IllegalArgumentException("Input file \"" + inputPath + "\" does not exist");
+        }
+        if (parsed.containsKey(disassemble)) {
+            try (InputStream is = Files.newInputStream(inputPath)) {
+                org.objectweb.asm.ClassReader reader = new org.objectweb.asm.ClassReader(is);
+                String value = classToTextify(e -> reader.accept(e, 0));
+                if (parsed.containsKey(output)) {
+                    Path outputPath = Path.of(output.value(args, parsed.get(output)));
+                    Files.writeString(outputPath, value, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                } else {
+                    System.out.println(value);
                 }
-            }).toArray(URL[]::new));
+            }
         } else {
-            loader = Main.class.getClassLoader();
+            ClassLoader loader;
+            if (parsed.containsKey(classpath)) {
+                loader = new URLClassLoader(Arrays.stream(classpath.value(args, parsed.get(classpath)).split(File.pathSeparator)).map(Path::of).map(Path::toUri).map(e -> {
+                    try {
+                        return e.toURL();
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }).toArray(URL[]::new), Main.class.getClassLoader());
+            } else {
+                loader = Main.class.getClassLoader();
+            }
+
+            // read in input.javasm
+            try (TokenReader reader = new TokenReader(Files.newBufferedReader(inputPath))) {
+                ClassReader asmReader = new ClassReader(reader);
+                ClassWriter writer = new ClassWriter(0) {
+                    @Override
+                    protected ClassLoader getClassLoader() {
+                        return loader;
+                    }
+                };
+                asmReader.accept(writer);
+                Path outputPath = Path.of(output.value(args, parsed.get(output)));
+                Files.write(outputPath, writer.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            }
         }
 
-        // read in input.javasm
-        try (TokenReader reader = new TokenReader(Files.newBufferedReader(Path.of(args[0])))) {
-            ClassReader asmReader = new ClassReader(reader);
-            ClassWriter writer = new ClassWriter(0) {
-                @Override
-                protected ClassLoader getClassLoader() {
-                    return loader;
-                }
-            };
-            asmReader.accept(writer);
-            Files.write(Path.of(args[1]), writer.toByteArray());
-        }
+    }
 
+    public static String classToTextify(IOConsumer<ClassVisitor> visitor) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintWriter pw = new PrintWriter(baos);
+        TraceClassVisitor traceClassVisitor = new TraceClassVisitor(null, new DeterministicTextifier(), pw);
+        visitor.accept(traceClassVisitor);
+        return baos.toString();
     }
 
 }
