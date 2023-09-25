@@ -1,7 +1,9 @@
 package xyz.wagyourtail.asmreader;
 
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class ArgHandler {
     public final Set<Arg> args = new LinkedHashSet<>();
@@ -42,7 +44,8 @@ public class ArgHandler {
         Map<Arg, Integer> parsed = new HashMap<>();
         for (int i = 0; i < args.length; ) {
             boolean flag = true;
-            outer: for (Arg arg : this.args) {
+            outer:
+            for (Arg arg : this.args) {
                 for (String name : arg.names) {
                     if (name.equals(args[i])) {
                         parsed.put(arg, i);

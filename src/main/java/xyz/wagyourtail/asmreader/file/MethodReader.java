@@ -147,7 +147,14 @@ public class MethodReader extends AbstractReader implements AnnotationVisitorSup
                             reader.throwAtPos("Expected index");
                         }
                         String signature = readSignature();
-                        visitor.visitLocalVariable(name.value, descTk.value, signature, labels.computeIfAbsent(Integer.parseInt(start.value.substring(1)), e -> new Label()), labels.computeIfAbsent(Integer.parseInt(end.value.substring(1)), e -> new Label()), Integer.parseInt(index.value));
+                        visitor.visitLocalVariable(
+                                name.value,
+                                descTk.value,
+                                signature,
+                                labels.computeIfAbsent(Integer.parseInt(start.value.substring(1)), e -> new Label()),
+                                labels.computeIfAbsent(Integer.parseInt(end.value.substring(1)), e -> new Label()),
+                                Integer.parseInt(index.value)
+                        );
                     }
                 }
                 case "MAXSTACK", "MAXLOCALS" -> {
@@ -186,7 +193,12 @@ public class MethodReader extends AbstractReader implements AnnotationVisitorSup
                             reader.throwAtPos("Expected label");
                         }
                         Token type = reader.popNonCommentExpect(TokenType.TOKEN);
-                        visitor.visitTryCatchBlock(labels.computeIfAbsent(Integer.parseInt(start.value.substring(1)), e -> new Label()), labels.computeIfAbsent(Integer.parseInt(end.value.substring(1)), e -> new Label()), labels.computeIfAbsent(Integer.parseInt(handler.value.substring(1)), e -> new Label()), type.value);
+                        visitor.visitTryCatchBlock(
+                                labels.computeIfAbsent(Integer.parseInt(start.value.substring(1)), e -> new Label()),
+                                labels.computeIfAbsent(Integer.parseInt(end.value.substring(1)), e -> new Label()),
+                                labels.computeIfAbsent(Integer.parseInt(handler.value.substring(1)), e -> new Label()),
+                                type.value.equals("null") ? null : type.value
+                        );
                     }
                 }
                 default -> {
