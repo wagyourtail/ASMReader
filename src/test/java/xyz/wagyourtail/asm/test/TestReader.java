@@ -83,6 +83,17 @@ public class TestReader {
     }
 
     @Test
+    public void test4() throws IOException {
+        String original = classToTextify(e -> readInClass("test4/World.class", e));
+        String recompiled = classToTextify(e -> compileJavasm(original, e));
+        assertEquals(original, recompiled);
+        // asmifier original and recompiled
+        String originalAsm = classToAsmify(e -> readInClass("test4/World.class", e));
+        String recompiledAsm = classToAsmify(e -> compileJavasm(original, e));
+        assertEquals(originalAsm, recompiledAsm);
+    }
+
+    @Test
     public void test5() throws IOException {
         String original = classToTextify(e -> readInClass("test5/World.class", e));
         String recompiled = classToTextify(e -> compileJavasm(original, e));
