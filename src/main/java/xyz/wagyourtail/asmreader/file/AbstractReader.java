@@ -289,7 +289,6 @@ public abstract class AbstractReader implements AnnotationVisitorSupplier {
                 tr = TypeReference.newTypeParameterBoundReference(TypeReference.METHOD_TYPE_PARAMETER_BOUND, Integer.parseInt(param), Integer.parseInt(param1));
             }
             case "FIELD" -> {
-//                value += TypeReference.FIELD << 24;
                 tr = TypeReference.newTypeReference(TypeReference.FIELD);
             }
             case "METHOD_RETURN" -> {
@@ -299,83 +298,61 @@ public abstract class AbstractReader implements AnnotationVisitorSupplier {
                 tr = TypeReference.newTypeReference(TypeReference.METHOD_RECEIVER);
             }
             case "METHOD_FORMAL_PARAMETER" -> {
-//                value += TypeReference.METHOD_FORMAL_PARAMETER << 24;
                 String param = reader.popNonCommentExpect(TokenType.TOKEN).value;
                 if (param.endsWith(",")) param = param.substring(0, param.length() - 1);
-//                value += Integer.parseInt(param) << 16;
                 tr = TypeReference.newFormalParameterReference(Integer.parseInt(param));
             }
             case "THROWS" -> {
-//                value += TypeReference.THROWS << 24;
                 String param = reader.popNonCommentExpect(TokenType.TOKEN).value;
                 if (param.endsWith(",")) param = param.substring(0, param.length() - 1);
-//                value += Integer.parseInt(param) << 8;
                 tr = TypeReference.newExceptionReference(Integer.parseInt(param));
             }
             case "LOCAL_VARIABLE" -> {
-//                value += TypeReference.LOCAL_VARIABLE << 24;
                 tr = TypeReference.newTypeReference(TypeReference.LOCAL_VARIABLE);
             }
             case "RESOURCE_VARIABLE" -> {
-//                value += TypeReference.RESOURCE_VARIABLE << 24;
                 tr = TypeReference.newTypeReference(TypeReference.RESOURCE_VARIABLE);
             }
             case "EXCEPTION_PARAMETER" -> {
-//                value += TypeReference.EXCEPTION_PARAMETER << 24;
                 String param = reader.popNonCommentExpect(TokenType.TOKEN).value;
                 if (param.endsWith(",")) param = param.substring(0, param.length() - 1);
-//                value += Integer.parseInt(param) << 8;
                 tr = TypeReference.newTryCatchReference(Integer.parseInt(param));
             }
             case "INSTANCEOF" -> {
-//                value += TypeReference.INSTANCEOF << 24;
                 tr = TypeReference.newTypeReference(TypeReference.INSTANCEOF);
             }
             case "NEW" -> {
-//                value += TypeReference.NEW << 24;
                 tr = TypeReference.newTypeReference(TypeReference.NEW);
             }
             case "CONSTRUCTOR_REFERENCE" -> {
-//                value += TypeReference.CONSTRUCTOR_REFERENCE << 24;
                 tr = TypeReference.newTypeReference(TypeReference.CONSTRUCTOR_REFERENCE);
             }
             case "METHOD_REFERENCE" -> {
-//                value += TypeReference.METHOD_REFERENCE << 24;
                 tr = TypeReference.newTypeReference(TypeReference.METHOD_REFERENCE);
             }
             case "CAST" -> {
-//                value += TypeReference.CAST << 24;
                 String param = reader.popNonCommentExpect(TokenType.TOKEN).value;
                 if (param.endsWith(",")) param = param.substring(0, param.length() - 1);
-//                value += Integer.parseInt(param);
                 tr = TypeReference.newTypeArgumentReference(TypeReference.CAST, Integer.parseInt(param));
             }
             case "CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT" -> {
-//                value += TypeReference.CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT << 24;
                 String param = reader.popNonCommentExpect(TokenType.TOKEN).value;
                 if (param.endsWith(",")) param = param.substring(0, param.length() - 1);
-//                value += Integer.parseInt(param);
                 tr = TypeReference.newTypeArgumentReference(TypeReference.CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT, Integer.parseInt(param));
             }
             case "METHOD_INVOCATION_TYPE_ARGUMENT" -> {
-//                value += TypeReference.METHOD_INVOCATION_TYPE_ARGUMENT << 24;
                 String param = reader.popNonCommentExpect(TokenType.TOKEN).value;
                 if (param.endsWith(",")) param = param.substring(0, param.length() - 1);
-//                value += Integer.parseInt(param);
                 tr = TypeReference.newTypeArgumentReference(TypeReference.METHOD_INVOCATION_TYPE_ARGUMENT, Integer.parseInt(param));
             }
             case "CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT" -> {
-//                value += TypeReference.CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT << 24;
                 String param = reader.popNonCommentExpect(TokenType.TOKEN).value;
                 if (param.endsWith(",")) param = param.substring(0, param.length() - 1);
-//                value += Integer.parseInt(param);
                 tr = TypeReference.newTypeArgumentReference(TypeReference.CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT, Integer.parseInt(param));
             }
             case "METHOD_REFERENCE_TYPE_ARGUMENT" -> {
-//                value += TypeReference.METHOD_REFERENCE_TYPE_ARGUMENT << 24;
                 String param = reader.popNonCommentExpect(TokenType.TOKEN).value;
                 if (param.endsWith(",")) param = param.substring(0, param.length() - 1);
-//                value += Integer.parseInt(param);
                 tr = TypeReference.newTypeArgumentReference(TypeReference.METHOD_REFERENCE_TYPE_ARGUMENT, Integer.parseInt(param));
             }
             default -> {
