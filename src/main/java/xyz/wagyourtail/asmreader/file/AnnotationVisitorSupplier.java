@@ -8,7 +8,7 @@ import xyz.wagyourtail.asmreader.token.Token;
 
 import java.io.IOException;
 
-interface AnnotationVisitorSupplier {
+public interface AnnotationVisitorSupplier {
     static AnnotationVisitorSupplier nullSupplier(IOSupplier<Void> exceptionConsumer) {
         return new AnnotationVisitorSupplier() {
             @Override

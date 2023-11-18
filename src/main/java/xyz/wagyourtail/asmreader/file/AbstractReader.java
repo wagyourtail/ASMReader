@@ -118,7 +118,7 @@ public abstract class AbstractReader implements AnnotationVisitorSupplier {
             // class
             return Type.getType(value.substring(0, value.length() - 6).replace('.', '/'));
         }
-        if (value.contains(".")) {
+        if (value.matches("-?\\d*\\.\\d+[FDfd]?")) {
             // float/double
             if (value.endsWith("F") || value.endsWith("f")) {
                 return Float.parseFloat(value.substring(0, value.length() - 1));
@@ -127,7 +127,7 @@ public abstract class AbstractReader implements AnnotationVisitorSupplier {
             } else {
                 return Double.parseDouble(value);
             }
-        } else if (value.matches("\\d+L?")) {
+        } else if (value.matches("-?\\d+[Ll]?")) {
             // int/long
             if (value.endsWith("L") || value.endsWith("l")) {
                 return Long.parseLong(value.substring(0, value.length() - 1));

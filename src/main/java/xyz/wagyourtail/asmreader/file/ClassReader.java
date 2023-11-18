@@ -243,6 +243,15 @@ public class ClassReader extends AbstractReader {
                     if (equals != null) {
                         // read value
                         Token tk = reader.popNonComment();
+                        if (type.value.equals("J")) {
+                            if (!tk.value.endsWith("L")) tk = new Token(tk.value + "L", TokenType.TOKEN);
+                        }
+                        if (type.value.equals("F")) {
+                            if (!tk.value.endsWith("F")) tk = new Token(tk.value + "F", TokenType.TOKEN);
+                        }
+                        if (type.value.equals("D")) {
+                            if (!tk.value.endsWith("D")) tk = new Token(tk.value + "D", TokenType.TOKEN);
+                        }
                         value = readPrimitive(tk, 0);
                     }
                     FieldReader fieldReader = new FieldReader(reader);
