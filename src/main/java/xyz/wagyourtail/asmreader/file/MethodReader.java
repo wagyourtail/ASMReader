@@ -22,6 +22,46 @@ public class MethodReader extends AbstractReader implements AnnotationVisitorSup
         super(reader);
     }
 
+    public void acceptWithHeader(MethodVisitor visitor) throws IOException {
+        if (this.visitor != null) throw new IllegalStateException("Already accepted");
+        this.visitor = visitor;
+        readMethodHeader();
+        readMethodContent();
+        visitEnd();
+    }
+
+    public void readMethodHeader() throws IOException {
+        int access = 0;
+        Integer accessFlags = null;
+        int a;
+        do {
+            a = AbstractReader.getAccess(reader);
+            access |= a;
+        } while (a != 0);
+        Token type = reader.popExpect(TokenType.TOKEN);
+        if (type.value.contains("(")) {
+            // split name and desc
+            int paren = type.value.lastIndexOf('(');
+            String name = type.value.substring(0, paren);
+            String desc = type.value.substring(paren);
+            Token thro = reader.popIf(t -> t.type == TokenType.TOKEN && t.value.equals("throws"));
+            List<Type> exceptions = new ArrayList<>();
+            if (thro != null) {
+                while (true) {
+                    Token tk = reader.popIf(e -> e.type == TokenType.TOKEN && !AbstractReader.OPCODES.containsKey(e.value.toUpperCase()) && !e.value.matches("L\\d+") && !AbstractReader.SPECIAL_OPCODES.contains(e.value.toUpperCase()) && !e.value.startsWith("@"));
+                    if (tk == null) {
+                        break;
+                    }
+                    exceptions.add(Type.getObjectType(tk.value));
+                }
+            }
+            this.abstractFlag = (access & ACC_ABSTRACT) != 0;
+            this.interfaceFlag = (access & ACC_INTERFACE) != 0;
+        } else {
+            throw new IllegalStateException("expected method type");
+        }
+    }
+
     public void accept(MethodVisitor visitor, boolean abstractFlag, boolean interfaceFlag) throws IOException {
         if (this.visitor != null) throw new IllegalStateException("Already accepted");
         this.visitor = visitor;
@@ -308,7 +348,7 @@ public class MethodReader extends AbstractReader implements AnnotationVisitorSup
                                     tableEntries.put(current, labels.computeIfAbsent(Integer.parseInt(split[1].substring(1)), e -> new Label()));
                                 }
                             } while (current != null);
-                            int[] keys = tableEntries.keySet().stream().mapToInt(e -> e).toArray();
+                            int[] keys = tableEntries.keySet().stream().filter(Objects::nonNull).mapToInt(e -> e).toArray();
                             visitor.visitLookupSwitchInsn(tableEntries.get(null), keys, Arrays.stream(keys).mapToObj(tableEntries::get).toArray(Label[]::new));
                         }
                         case GETSTATIC, PUTSTATIC, GETFIELD, PUTFIELD -> {

@@ -2,8 +2,10 @@ package xyz.wagyourtail.asmreader;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.util.TraceClassVisitor;
 import xyz.wagyourtail.asmreader.file.ClassReader;
+import xyz.wagyourtail.asmreader.file.MethodReader;
 import xyz.wagyourtail.asmreader.iofunction.IOConsumer;
 import xyz.wagyourtail.asmreader.token.TokenReader;
 
@@ -23,6 +25,12 @@ public class Main {
         TokenReader reader = new TokenReader(new StringReader(asm));
         ClassReader asmReader = new ClassReader(reader);
         asmReader.accept(visitor);
+    }
+
+    public static void compileJavasmMethod(String method, MethodVisitor visitor) throws IOException {
+        TokenReader reader = new TokenReader(new StringReader(method));
+        MethodReader asmReader = new MethodReader(reader);
+        asmReader.acceptWithHeader(visitor);
     }
 
     public static void main(String[] args) throws IOException {

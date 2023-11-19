@@ -202,6 +202,9 @@ public class ClassReader extends AbstractReader {
             Token type = reader.popNonCommentIf(e -> e.type == TokenType.TOKEN);
             if (type != null) {
                 if (type.value.equals("}")) {
+                    if (access != 0 || accessFlags != null) {
+                        reader.throwAtPos("Didn't expect access modifier with }");
+                    }
                     break;
                 }
                 if (type.value.contains("(")) {

@@ -19,6 +19,14 @@ public class World extends @Test.Inner SuperClass implements @Test.Inner SuperIn
 
     public static final boolean i = true;
 
+    private static final Double nan = Double.NaN;
+
+    private static final Double inf = Double.POSITIVE_INFINITY;
+
+    private static final Float ninf = Float.NEGATIVE_INFINITY;
+
+    private static final Double zero = 0.0;
+
     @Override
     public void test() {
 

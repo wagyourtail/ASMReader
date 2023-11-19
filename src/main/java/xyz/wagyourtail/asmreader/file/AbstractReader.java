@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -62,7 +63,8 @@ public abstract class AbstractReader implements AnnotationVisitorSupplier {
             Map.entry("ABSTRACT", Opcodes.ACC_ABSTRACT),
             Map.entry("STRICTFP", Opcodes.ACC_STRICT),
             Map.entry("SYNTHETIC", Opcodes.ACC_SYNTHETIC),
-            Map.entry("MANDATED", Opcodes.ACC_MANDATED)
+            Map.entry("MANDATED", Opcodes.ACC_MANDATED),
+            Map.entry("VARARGS", Opcodes.ACC_VARARGS)
     );
     protected final TokenReader reader;
     Set<Integer> RECORD_COMPONENT_TYPE_REF = Set.of(TypeReference.CLASS_TYPE_PARAMETER, TypeReference.CLASS_TYPE_PARAMETER_BOUND, TypeReference.CLASS_EXTENDS, TypeReference.FIELD);
@@ -121,6 +123,8 @@ public abstract class AbstractReader implements AnnotationVisitorSupplier {
         return m.group("signature");
     }
 
+    private static final Predicate<String> DOUBLE_VALUE = Pattern.compile("[\\-+]?(?:\\d+[fd](?:e\\d+)?|(?:\\d*\\.\\d+(?:e\\d+)?|infinity|nan)[fd]?)", Pattern.CASE_INSENSITIVE).asMatchPredicate();
+
     protected Object readPrimitive(Token tk, int offset) throws IOException {
         if (tk.type == TokenType.STRING) {
             return translateUnicode(tk.value).translateEscapes();
@@ -138,7 +142,7 @@ public abstract class AbstractReader implements AnnotationVisitorSupplier {
             // class
             return Type.getType(value.substring(0, value.length() - 6).replace('.', '/'));
         }
-        if (value.matches("-?\\d*\\.\\d+[FDfd]?")) {
+        if (DOUBLE_VALUE.test(value)) {
             // float/double
             if (value.endsWith("F") || value.endsWith("f")) {
                 return Float.parseFloat(value.substring(0, value.length() - 1));
@@ -147,7 +151,7 @@ public abstract class AbstractReader implements AnnotationVisitorSupplier {
             } else {
                 return Double.parseDouble(value);
             }
-        } else if (value.matches("-?\\d+[Ll]?")) {
+        } else if (value.matches("[\\-+]?\\d+[Ll]?")) {
             // int/long
             if (value.endsWith("L") || value.endsWith("l")) {
                 return Long.parseLong(value.substring(0, value.length() - 1));
