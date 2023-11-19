@@ -3,6 +3,7 @@ package xyz.wagyourtail.asmreader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.TraceClassVisitor;
 import xyz.wagyourtail.asmreader.file.ClassReader;
 import xyz.wagyourtail.asmreader.file.MethodReader;
@@ -15,6 +16,7 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -27,10 +29,23 @@ public class Main {
         asmReader.accept(visitor);
     }
 
-    public static void compileJavasmMethod(String method, MethodVisitor visitor) throws IOException {
+    public static void compileJavasmMethod(String method, ClassVisitor visitor) throws IOException {
         TokenReader reader = new TokenReader(new StringReader(method));
         MethodReader asmReader = new MethodReader(reader);
-        asmReader.acceptWithHeader(visitor);
+        asmReader.acceptWithHeader(visitor::visitMethod);
+    }
+
+    public static void compileJavasmMethod(String method, MethodNode visitor) throws IOException {
+        TokenReader reader = new TokenReader(new StringReader(method));
+        MethodReader asmReader = new MethodReader(reader);
+        asmReader.acceptWithHeader((access, name, descriptor, signature, exceptions) -> {
+            visitor.access = access;
+            visitor.name = name;
+            visitor.desc = descriptor;
+            visitor.signature = signature;
+            visitor.exceptions = new ArrayList<>(Arrays.asList(exceptions));
+            return visitor;
+        });
     }
 
     public static void main(String[] args) throws IOException {

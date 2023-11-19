@@ -30,6 +30,9 @@ public class TokenReader implements AutoCloseable {
 
     protected Token readNext() throws IOException {
         if (last != null) {
+            if (last.type == TokenType.EOF) {
+                throw new IllegalStateException("Cannot read next token after EOF");
+            }
             column += last.value.length();
         }
         while (current == null || current.isBlank()) {

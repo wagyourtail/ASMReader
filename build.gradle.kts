@@ -9,7 +9,7 @@ plugins {
 base {
     group = "xyz.wagyourtail"
     archivesName.set("asm-reader")
-    version = "1.0.3"
+    version = "1.0.4"
 }
 
 application {

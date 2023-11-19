@@ -55,16 +55,29 @@ public abstract class AbstractReader implements AnnotationVisitorSupplier {
             Map.entry("PUBLIC", Opcodes.ACC_PUBLIC),
             Map.entry("PRIVATE", Opcodes.ACC_PRIVATE),
             Map.entry("PROTECTED", Opcodes.ACC_PROTECTED),
-            Map.entry("FINAL", Opcodes.ACC_FINAL),
             Map.entry("STATIC", Opcodes.ACC_STATIC),
+            Map.entry("FINAL", Opcodes.ACC_FINAL),
+            Map.entry("SUPER", Opcodes.ACC_SUPER),
             Map.entry("SYNCHRONIZED", Opcodes.ACC_SYNCHRONIZED),
+            Map.entry("OPEN", Opcodes.ACC_OPEN),
+            Map.entry("TRANSITIVE", ACC_TRANSITIVE),
             Map.entry("VOLATILE", Opcodes.ACC_VOLATILE),
+            Map.entry("BRIDGE", Opcodes.ACC_BRIDGE),
+            //Map.entry("STATIC", Opcodes.ACC_STATIC_PHASE),
+            Map.entry("VARARGS", Opcodes.ACC_VARARGS),
             Map.entry("TRANSIENT", Opcodes.ACC_TRANSIENT),
+            Map.entry("NATIVE", Opcodes.ACC_NATIVE),
+//            Map.entry("INTERFACE", Opcodes.ACC_INTERFACE),
             Map.entry("ABSTRACT", Opcodes.ACC_ABSTRACT),
             Map.entry("STRICTFP", Opcodes.ACC_STRICT),
             Map.entry("SYNTHETIC", Opcodes.ACC_SYNTHETIC),
+            Map.entry("ANNOTATION", Opcodes.ACC_ANNOTATION),
+//            Map.entry("ENUM", Opcodes.ACC_ENUM),
             Map.entry("MANDATED", Opcodes.ACC_MANDATED),
-            Map.entry("VARARGS", Opcodes.ACC_VARARGS)
+            Map.entry("MODULE", Opcodes.ACC_MODULE),
+            Map.entry("RECORD", Opcodes.ACC_RECORD),
+            Map.entry("DEPRECATED", Opcodes.ACC_DEPRECATED),
+            Map.entry("DEFAULT", 0)
     );
     protected final TokenReader reader;
     Set<Integer> RECORD_COMPONENT_TYPE_REF = Set.of(TypeReference.CLASS_TYPE_PARAMETER, TypeReference.CLASS_TYPE_PARAMETER_BOUND, TypeReference.CLASS_EXTENDS, TypeReference.FIELD);

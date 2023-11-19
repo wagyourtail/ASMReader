@@ -22,44 +22,58 @@ public class MethodReader extends AbstractReader implements AnnotationVisitorSup
         super(reader);
     }
 
-    public void acceptWithHeader(MethodVisitor visitor) throws IOException {
+    public void acceptWithHeader(IMethodVisitorConstructor cv) throws IOException {
         if (this.visitor != null) throw new IllegalStateException("Already accepted");
-        this.visitor = visitor;
-        readMethodHeader();
+        readMethodHeader(cv);
         readMethodContent();
         visitEnd();
     }
 
-    public void readMethodHeader() throws IOException {
+    public void readMethodHeader(IMethodVisitorConstructor cv) throws IOException {
         int access = 0;
         Integer accessFlags = null;
+        // access flags
         int a;
         do {
+            Token accessComment = reader.popIf(t -> t.type == TokenType.COMMENT && AbstractReader.ACCESS_FLAGS.matcher(t.value).find());
+            if (accessComment != null) {
+                Matcher m = AbstractReader.ACCESS_FLAGS.matcher(accessComment.value);
+                if (m.find()) {
+                    accessFlags = Integer.parseInt(m.group("accessFlags"), 16);
+                }
+                continue;
+            }
+            reader.popNonCommentIf(e -> false);
             a = AbstractReader.getAccess(reader);
             access |= a;
-        } while (a != 0);
-        Token type = reader.popExpect(TokenType.TOKEN);
-        if (type.value.contains("(")) {
-            // split name and desc
-            int paren = type.value.lastIndexOf('(');
-            String name = type.value.substring(0, paren);
-            String desc = type.value.substring(paren);
-            Token thro = reader.popIf(t -> t.type == TokenType.TOKEN && t.value.equals("throws"));
-            List<Type> exceptions = new ArrayList<>();
-            if (thro != null) {
-                while (true) {
-                    Token tk = reader.popIf(e -> e.type == TokenType.TOKEN && !AbstractReader.OPCODES.containsKey(e.value.toUpperCase()) && !e.value.matches("L\\d+") && !AbstractReader.SPECIAL_OPCODES.contains(e.value.toUpperCase()) && !e.value.startsWith("@"));
-                    if (tk == null) {
-                        break;
-                    }
-                    exceptions.add(Type.getObjectType(tk.value));
-                }
+            if (a != 0) {
+                continue;
             }
-            this.abstractFlag = (access & ACC_ABSTRACT) != 0;
-            this.interfaceFlag = (access & ACC_INTERFACE) != 0;
-        } else {
-            throw new IllegalStateException("expected method type");
-        }
+            Token type = reader.popExpect(TokenType.TOKEN);
+            if (type.value.contains("(")) {
+                // split name and desc
+                int paren = type.value.lastIndexOf('(');
+                String name = type.value.substring(0, paren);
+                String desc = type.value.substring(paren);
+                Token thro = reader.popIf(t -> t.type == TokenType.TOKEN && t.value.equals("throws"));
+                List<Type> exceptions = new ArrayList<>();
+                if (thro != null) {
+                    while (true) {
+                        Token tk = reader.popIf(e -> e.type == TokenType.TOKEN && !AbstractReader.OPCODES.containsKey(e.value.toUpperCase()) && !e.value.matches("L\\d+") && !AbstractReader.SPECIAL_OPCODES.contains(e.value.toUpperCase()) && !e.value.startsWith("@"));
+                        if (tk == null) {
+                            break;
+                        }
+                        exceptions.add(Type.getObjectType(tk.value));
+                    }
+                }
+                visitor = cv.visitMethod(accessFlags == null ? access : accessFlags, name, desc, null, exceptions.toArray(new String[0]));
+                this.abstractFlag = ((accessFlags == null ? access : accessFlags) & ACC_ABSTRACT) != 0;
+                this.interfaceFlag = ((accessFlags == null ? access : accessFlags) & ACC_INTERFACE) != 0;
+            } else {
+                throw new IllegalStateException("expected method type");
+            }
+            break;
+        } while (true);
     }
 
     public void accept(MethodVisitor visitor, boolean abstractFlag, boolean interfaceFlag) throws IOException {
@@ -617,5 +631,15 @@ public class MethodReader extends AbstractReader implements AnnotationVisitorSup
     @Override
     public void visitEnd() {
         visitor.visitEnd();
+    }
+
+    @FunctionalInterface
+    public interface IMethodVisitorConstructor {
+        MethodVisitor visitMethod(
+                final int access,
+                final String name,
+                final String descriptor,
+                final String signature,
+                final String[] exceptions);
     }
 }
