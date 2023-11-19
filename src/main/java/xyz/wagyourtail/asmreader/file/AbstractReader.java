@@ -71,6 +71,26 @@ public abstract class AbstractReader implements AnnotationVisitorSupplier {
         this.reader = reader;
     }
 
+    private static final Pattern UNICODE = Pattern.compile("(?:(?<=[^\\\\])|^)((?:\\\\{2})*)\\\\u([0-9a-fA-F]{4})");
+
+    public static String translateUnicode(String str) {
+        StringBuilder sb = new StringBuilder();
+        Matcher m = UNICODE.matcher(str);
+        while (m.find()) {
+            String escape = m.group(1);
+            int codepoint = Integer.parseInt(m.group(2), 16);
+            m.appendReplacement(sb, Matcher.quoteReplacement(escape + Character.toString(codepoint)));
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
+    public static void main(String[] args) {
+        String test = "test\\\\\\u0020test";
+        System.out.println(test);
+        System.out.println(translateUnicode(test));
+    }
+
     public static int getAccess(TokenReader lister) throws IOException {
         int access = 0;
         Token tk;
@@ -103,11 +123,11 @@ public abstract class AbstractReader implements AnnotationVisitorSupplier {
 
     protected Object readPrimitive(Token tk, int offset) throws IOException {
         if (tk.type == TokenType.STRING) {
-            return tk.value.translateEscapes();
+            return translateUnicode(tk.value).translateEscapes();
         }
         if (tk.type == TokenType.CHAR) {
             String val = tk.value;
-            val = val.translateEscapes();
+            val = translateUnicode(val).translateEscapes();
             if (val.length() != 1) {
                 reader.throwAtPos("Expected single char", offset);
             }
@@ -146,7 +166,7 @@ public abstract class AbstractReader implements AnnotationVisitorSupplier {
         } else if (value.startsWith("'")) {
             // unescape char
             String val = value.substring(1, value.length() - 1);
-            val = val.translateEscapes();
+            val = translateUnicode(val).translateEscapes();
             if (val.length() != 1) {
                 reader.throwAtPos("Expected single char", offset);
             }

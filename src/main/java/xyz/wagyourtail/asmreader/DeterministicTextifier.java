@@ -161,4 +161,5 @@ public class DeterministicTextifier extends Textifier {
     protected Textifier createTextifier() {
         return new DeterministicTextifier();
     }
+
 }

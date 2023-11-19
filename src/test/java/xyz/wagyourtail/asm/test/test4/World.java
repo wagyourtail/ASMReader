@@ -13,7 +13,11 @@ public class World extends @Test.Inner SuperClass implements @Test.Inner SuperIn
     public static final String e = "echo";
     public static final String f = "ec\"ho";
 
-    public static final boolean g = true;
+    public static final String g = "\u00a7e[DEBUG]\u00a7r ";
+    public static final String h = "\\u00a7e[DEBUG]\\u00a7r ";
+
+
+    public static final boolean i = true;
 
     @Override
     public void test() {
