@@ -66,7 +66,7 @@ public class MethodReader extends AbstractReader implements AnnotationVisitorSup
                         exceptions.add(Type.getObjectType(tk.value));
                     }
                 }
-                visitor = cv.visitMethod(accessFlags == null ? access : accessFlags, name, desc, null, exceptions.toArray(new String[0]));
+                visitor = cv.visitMethod(accessFlags == null ? access : accessFlags, name, desc, null, exceptions.stream().map(Type::getInternalName).toArray(String[]::new));
                 this.abstractFlag = ((accessFlags == null ? access : accessFlags) & ACC_ABSTRACT) != 0;
                 this.interfaceFlag = ((accessFlags == null ? access : accessFlags) & ACC_INTERFACE) != 0;
             } else {
