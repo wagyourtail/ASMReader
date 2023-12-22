@@ -51,7 +51,7 @@ public abstract class AbstractReader implements AnnotationVisitorSupplier {
     public static final Pattern ANNOTABLE_PARAMETER_COUNT = Pattern.compile("^\\s*annotable\\s*parameter\\s*count:?\\s*(?<count>\\d+)\\s*\\((?<invisible>invisible|visible)\\)", Pattern.CASE_INSENSITIVE);
     public static final Pattern HANDLE_KIND = Pattern.compile("^\\s*handle\\s*kind:?\\s*0x(?<kind>[\\da-fA-F]+)\\s*:\\s*(?<type>.*)", Pattern.CASE_INSENSITIVE);
     public static final Set<Integer> CLASS_TYPE_REF = Set.of(TypeReference.CLASS_TYPE_PARAMETER, TypeReference.CLASS_TYPE_PARAMETER_BOUND, TypeReference.CLASS_EXTENDS);
-    private static final Map<String, Integer> ACCESS_MAP = Map.ofEntries(
+    protected static final Map<String, Integer> ACCESS_MAP = Map.ofEntries(
             Map.entry("PUBLIC", Opcodes.ACC_PUBLIC),
             Map.entry("PRIVATE", Opcodes.ACC_PRIVATE),
             Map.entry("PROTECTED", Opcodes.ACC_PROTECTED),
@@ -155,6 +155,9 @@ public abstract class AbstractReader implements AnnotationVisitorSupplier {
             // class
             return Type.getType(value.substring(0, value.length() - 6).replace('.', '/'));
         }
+        if (value.endsWith(",")) {
+            value = value.substring(0, value.length() - 1);
+        }
         if (DOUBLE_VALUE.test(value)) {
             // float/double
             if (value.endsWith("F") || value.endsWith("f")) {
@@ -196,6 +199,122 @@ public abstract class AbstractReader implements AnnotationVisitorSupplier {
             reader.throwAtPos("Unknown primitive value: " + value, offset);
             return null;
         }
+    }
+
+    protected ConstantDynamic readCondy(Token type) throws IOException {
+        Type t = Type.getType(type.value);
+        reader.popNonCommentExpect(TokenType.TOKEN, ":");
+        Token name = reader.popNonCommentExpect(TokenType.STRING);
+        List<Object> args = readDynamicArgs();
+        if (!(args.get(0) instanceof Handle)) {
+            reader.throwAtPos("Expected first CONDY arg to be a handle, got " + args.get(0).getClass().getName());
+        }
+        Handle handle = (Handle) args.remove(0);
+        return new ConstantDynamic(name.value, t.getDescriptor(), handle, args.toArray());
+    }
+
+    protected List<Object> readDynamicArgs() throws IOException {
+        reader.popNonCommentExpect(TokenType.TOKEN, "[");
+        Integer handleType = null;
+        List<Object> args = new ArrayList<>();
+        while (reader.peekExpect(TokenType.TOKEN, Set.of("]", "],")) == null) {
+            Token handleKind = reader.popIf(t -> t.type == TokenType.COMMENT && HANDLE_KIND.matcher(t.value).find());
+            if (handleKind != null) {
+                Matcher m = HANDLE_KIND.matcher(handleKind.value);
+                m.find();
+                handleType = Integer.parseInt(m.group("kind"), 16);
+            }
+            Token nextTk = reader.popNonComment();
+            Object next = null;
+            if (nextTk.type == TokenType.TOKEN && nextTk.value.equals(",")) {
+                continue;
+            }
+            if (handleType != null) {
+                String owner;
+                String hname;
+                String hdesc;
+                String hvalue = nextTk.value;
+                if (hvalue.endsWith(",")) {
+                    hvalue = hvalue.substring(0, hvalue.length() - 1);
+                }
+                int dot = nextTk.value.indexOf('.');
+                if (dot != -1) {
+                    owner = hvalue.substring(0, dot);
+                    hvalue = hvalue.substring(dot + 1);
+                } else {
+                    nextTk = reader.popNonCommentExpect(TokenType.TOKEN);
+                    owner = hvalue;
+                    hvalue = nextTk.value;
+                    if (hvalue.endsWith(",")) {
+                        hvalue = hvalue.substring(0, hvalue.length() - 1);
+                    }
+                }
+                int hparen = hvalue.lastIndexOf('(');
+                if (hparen != -1) {
+                    hdesc = hvalue.substring(hparen);
+                    hname = hvalue.substring(0, hparen);
+                } else {
+                    nextTk = reader.popNonCommentExpect(TokenType.TOKEN);
+                    hname = hvalue;
+                    hvalue = nextTk.value;
+                    if (hvalue.endsWith(",")) {
+                        hvalue = hvalue.substring(0, hvalue.length() - 1);
+                    }
+                    hdesc = hvalue;
+                }
+                if (hdesc.endsWith(")")) {
+                    hdesc = hdesc.substring(1, hdesc.length() - 1);
+                }
+                boolean itf = false;
+                if (!nextTk.value.endsWith(",")) {
+                    String s = reader.peekExpect(TokenType.TOKEN, Set.of("itf", "itf,"));
+                    if (s != null) {
+                        itf = true;
+                        reader.pop();
+                    }
+                }
+                next = new Handle(handleType, owner, hname, hdesc, itf);
+                handleType = null;
+            } else if (nextTk.type == TokenType.TOKEN && nextTk.value.startsWith("L") && nextTk.value.endsWith(";")) {
+                next = readCondy(nextTk);
+            } else {
+                String ivalue = nextTk.value;
+                if (ivalue.endsWith(",")) {
+                    ivalue = ivalue.substring(0, ivalue.length() - 1);
+                }
+                if (ivalue.endsWith(".class")) {
+                    next = Type.getObjectType(ivalue.substring(0, ivalue.length() - 6).replace('.', '/'));
+                } else {
+                    try {
+                        next = readPrimitive(nextTk, 0);
+                    } catch (TokenReader.UnexpectedTokenException ex) {
+                        if (ex.msg.startsWith("Unknown primitive value")) {
+                            try {
+                                next = Type.getType(ivalue);
+                            } catch (IllegalArgumentException e) {
+                                try {
+                                    reader.throwAtPos("Expected a valid type");
+                                } catch (TokenReader.UnexpectedTokenException ee) {
+                                    ee.addSuppressed(e);
+                                    ee.addSuppressed(ex);
+                                    throw ee;
+                                }
+                            }
+                        } else {
+                            try {
+                                reader.throwAtPos("Expected a valid primitive");
+                            } catch (TokenReader.UnexpectedTokenException ee) {
+                                ee.addSuppressed(ex);
+                                throw ee;
+                            }
+                        }
+                    }
+                }
+            }
+            args.add(next);
+        }
+        reader.popNonCommentExpect(TokenType.TOKEN, Set.of("]", "],"));
+        return args;
     }
 
     protected void readAnnotation(Token beginning, Map<Integer, Label> labels, AnnotationVisitorSupplier visitor) throws IOException {

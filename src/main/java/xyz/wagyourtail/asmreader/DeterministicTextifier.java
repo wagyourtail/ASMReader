@@ -1,5 +1,7 @@
 package xyz.wagyourtail.asmreader;
 
+import org.objectweb.asm.ConstantDynamic;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.signature.SignatureReader;
@@ -12,6 +14,7 @@ public class DeterministicTextifier extends Textifier {
     private static final String DEPRECATED = "// DEPRECATED\n";
 
     private int access;
+    private String condyIndent = tab2;
 
     public DeterministicTextifier() {
         super(Opcodes.ASM9);
@@ -28,6 +31,10 @@ public class DeterministicTextifier extends Textifier {
                 .append("// access flags 0x")
                 .append(Integer.toHexString(accessFlags).toUpperCase())
                 .append('\n');
+    }
+
+    private void visitType(final Type value) {
+        stringBuilder.append(value.getClassName()).append(CLASS_SUFFIX);
     }
 
     private void appendJavaDeclaration(final String name, final String signature) {
@@ -108,6 +115,8 @@ public class DeterministicTextifier extends Textifier {
             Printer.appendString(stringBuilder, (String) value);
         } else if (value instanceof Type) {
             stringBuilder.append(((Type) value).getDescriptor()).append(CLASS_SUFFIX);
+        } else if (value instanceof ConstantDynamic) {
+            appendCondy((ConstantDynamic) value);
         } else {
             stringBuilder.append(value);
         }
@@ -120,6 +129,78 @@ public class DeterministicTextifier extends Textifier {
         appendValue(value);
         stringBuilder.append('\n');
         text.add(stringBuilder.toString());
+    }
+
+    @Override
+    public void visitInvokeDynamicInsn(String name, String descriptor, Handle bootstrapMethodHandle, Object... bootstrapMethodArguments) {
+        stringBuilder.setLength(0);
+        stringBuilder.append(tab2).append("INVOKEDYNAMIC").append(' ');
+        stringBuilder.append(name);
+        appendDescriptor(METHOD_DESCRIPTOR, descriptor);
+        stringBuilder.append(" [");
+        stringBuilder.append('\n');
+        stringBuilder.append(tab3);
+        appendHandle(bootstrapMethodHandle);
+        stringBuilder.append('\n');
+        stringBuilder.append(tab3).append("// arguments:");
+        if (bootstrapMethodArguments.length == 0) {
+            stringBuilder.append(" none");
+        } else {
+            stringBuilder.append('\n');
+            for (Object value : bootstrapMethodArguments) {
+                stringBuilder.append(tab3);
+                if (value instanceof Type) {
+                    Type type = (Type) value;
+                    if (type.getSort() == Type.METHOD) {
+                        appendDescriptor(METHOD_DESCRIPTOR, type.getDescriptor());
+                    } else {
+                        visitType(type);
+                    }
+                } else if (value instanceof Handle) {
+                    appendHandle((Handle) value);
+                } else {
+                    condyIndent = tab3;
+                    appendValue(value);
+                    condyIndent = tab2;
+                }
+                stringBuilder.append(", \n");
+            }
+            stringBuilder.setLength(stringBuilder.length() - 3);
+        }
+        stringBuilder.append('\n');
+        stringBuilder.append(tab2).append("]\n");
+        text.add(stringBuilder.toString());
+    }
+
+    public void appendCondy(ConstantDynamic condy) {
+        stringBuilder.append("// constant dynamic: ").append("\n").append(condyIndent);
+        condyIndent = condyIndent + tab;
+        tab3 = condyIndent;
+        stringBuilder.append(condy.getDescriptor()).append(" : ");
+        Printer.appendString(stringBuilder, condy.getName());
+        stringBuilder.append(" [\n").append(condyIndent);
+        appendHandle(condy.getBootstrapMethod());
+        stringBuilder.append("\n");
+        for (int i = 0; i < condy.getBootstrapMethodArgumentCount(); i++) {
+            stringBuilder.append(condyIndent);
+            Object value = condy.getBootstrapMethodArgument(i);
+            if (value instanceof Type) {
+                Type type = (Type) value;
+                if (type.getSort() == Type.METHOD) {
+                    appendDescriptor(METHOD_DESCRIPTOR, type.getDescriptor());
+                } else {
+                    visitType(type);
+                }
+            } else if (value instanceof Handle) {
+                appendHandle((Handle) value);
+            } else {
+                appendValue(value);
+            }
+            stringBuilder.append(", \n");
+        }
+        condyIndent = condyIndent.substring(0, condyIndent.length() - tab.length());
+        stringBuilder.append(condyIndent).append("]");
+        tab3 = tab2 + tab;
     }
 
     public Textifier visitField(

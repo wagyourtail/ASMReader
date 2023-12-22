@@ -133,6 +133,10 @@ public class ClassReader extends AbstractReader {
             // tokens
             reader.popNonCommentIf(e -> false);
             int a = AbstractReader.getAccess(reader);
+            Token enumm = reader.popIf(e -> e.type == TokenType.TOKEN && e.value.equalsIgnoreCase("ENUM"));
+            if (enumm != null) {
+                access |= ACC_ENUM;
+            }
             access |= a;
             if (a != 0) {
                 continue;
@@ -255,6 +259,7 @@ public class ClassReader extends AbstractReader {
                         if (type.value.equals("D")) {
                             if (!tk.value.endsWith("D")) tk = new Token(tk.value + "D", TokenType.TOKEN);
                         }
+                        // handle condy if/when https://openjdk.org/jeps/8209964 is merged
                         value = readPrimitive(tk, 0);
                     }
                     FieldReader fieldReader = new FieldReader(reader);
